@@ -1,0 +1,56 @@
+# docker-compose.yaml
+
+services:
+  timescaledb:
+    image: timescale/timescaledb:latest-pg16
+    container_name: oem_timescaledb
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-telemetry_db}
+      POSTGRES_USER: ${POSTGRES_USER:-admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-admin123}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - timescale_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-admin} -d ${POSTGRES_DB:-telemetry_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: oem_redis
+    restart: always
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  mosquitto:
+    image: eclipse-mosquitto:2.0
+    container_name: oem_mosquitto
+    restart: always
+    ports:
+      - "${MQTT_PORT:-1883}:1883"
+    volumes:
+      - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - mosquitto_data:/mosquitto/data
+
+  iot-simulator:
+    build: ./iot-simulator
+    container_name: oem_iot_simulator
+    restart: always
+    depends_on:
+      - mosquitto
+
+volumes:
+  timescale_data:
+  redis_data:
+  mosquitto_data:
