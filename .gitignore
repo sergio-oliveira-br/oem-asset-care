@@ -1,0 +1,76 @@
+# .gitignore
+
+# ==========================================
+# AMBIENTE E SEGREDO (CRÍTICO)
+# ==========================================
+# Nunca versione credenciais ou senhas reais
+.env
+.env.local
+.env.*.local
+*.env
+
+# Exceção obrigatória: O arquivo de exemplo deve ser versionado!
+!.env.example
+
+# ==========================================
+# IDEs E EDITORES (IntelliJ, PyCharm, VSCode)
+# ==========================================
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+*.swp
+*.swo
+
+# ==========================================
+# SISTEMA OPERACIONAL (macOS, Windows, Linux)
+# ==========================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# ==========================================
+# PYTHON (iot-simulator, core-api, alert-engine, realtime-gateway)
+# ==========================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.venv/
+*.venv
+.pytest_cache/
+.coverage
+htmlcov/
+*.log
+
+# ==========================================
+# JAVA / SPRING BOOT (ingestion-worker)
+# ==========================================
+target/
+*.class
+*.jar
+*.war
+*.ear
+.gradle/
+build/
+
+# ==========================================
+# DOCKER & BANCOS DE DADOS LOCAIS
+# ==========================================
+*.db
+*.sqlite3
+postgres_data/
+timescale_data/
+redis_data/
+mosquitto_data/
