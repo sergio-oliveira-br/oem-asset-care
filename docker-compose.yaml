@@ -1,6 +1,9 @@
 # docker-compose.yaml
 
 services:
+  # ---------------------------------------------------------------------------
+  # INFRAESTRUTURA BASE
+  # ---------------------------------------------------------------------------
   timescaledb:
     image: timescale/timescaledb:latest-pg16
     container_name: oem_timescaledb
@@ -43,12 +46,95 @@ services:
       - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf
       - mosquitto_data:/mosquitto/data
 
+  # ---------------------------------------------------------------------------
+  # CONTROL PLANE
+  # ---------------------------------------------------------------------------
+  core-api:
+    build: ./core-api
+    container_name: oem_core_business
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - DB_HOST=timescaledb
+      - DB_PORT=5432
+      - DB_NAME=${POSTGRES_DB:-telemetry_db}
+      - DB_USER=${POSTGRES_USER:-admin}
+      - DB_PASSWORD=${POSTGRES_PASSWORD:-admin123}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # ---------------------------------------------------------------------------
+  # DATA PLANE (INGESTÃO, ALERTAS E REALTIME GATEWAY)
+  # ---------------------------------------------------------------------------
+  ingestion-worker:
+    build: ./ingestion-worker
+    container_name: oem_ingestion_worker
+    restart: always
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://timescaledb:5432/${POSTGRES_DB:-telemetry_db}
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER:-admin}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD:-admin123}
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_PORT=6379
+      - MQTT_BROKER_URL=tcp://mosquitto:1883
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  alert-engine:
+    build: ./alert-engine
+    container_name: oem_alert_engine
+    restart: always
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  realtime-gateway:
+    build: ./realtime-gateway
+    container_name: oem_realtime_gateway
+    restart: always
+    ports:
+      - "8003:8003"
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  # ---------------------------------------------------------------------------
+  # FRONTEND & SIMULAÇÃO IOT
+  # ---------------------------------------------------------------------------
+  frontend:
+    build: ./frontend
+    container_name: oem_frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - realtime-gateway
+
   iot-simulator:
     build: ./iot-simulator
     container_name: oem_iot_simulator
     restart: always
+    environment:
+      - MQTT_BROKER_HOST=mosquitto
+      - MQTT_BROKER_PORT=1883
     depends_on:
       - mosquitto
+      - ingestion-worker
 
 volumes:
   timescale_data:
