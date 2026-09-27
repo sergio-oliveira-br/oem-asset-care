@@ -88,8 +88,8 @@ DATABASES = {
         'NAME': os.getenv('POSTGRES_DB', 'telemetry_db'),
         'USER': os.getenv('POSTGRES_USER', 'admin'),
         'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'admin123'),
-        'HOST': os.getenv('POSTGRES_HOST', 'localhost'),
-        'PORT': os.getenv('POSTGRES_PORT', '5433'),
+        'HOST': os.getenv('POSTGRES_HOST', 'timescaledb'),
+        'PORT': os.getenv('POSTGRES_PORT', '5432'),
     }
 }
 
