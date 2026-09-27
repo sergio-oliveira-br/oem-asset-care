@@ -9,6 +9,7 @@ import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.integration.channel.DirectChannel;
 import org.springframework.integration.core.MessageProducer;
@@ -23,6 +24,7 @@ import org.springframework.messaging.MessageHandler;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Configuration
@@ -43,6 +45,7 @@ public class MqttConsumerConfig {
     private int batchSize;
 
     private final TimescaleBatchRepository batchRepository;
+    private final StringRedisTemplate stringRedisTemplate;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final List<TelemetryDTO> buffer = Collections.synchronizedList(new ArrayList<>());
 
@@ -80,6 +83,10 @@ public class MqttConsumerConfig {
                 String payload = (String) message.getPayload();
                 TelemetryDTO dto = objectMapper.readValue(payload, TelemetryDTO.class);
 
+                // Publica IMEDIATAMENTE no Redis Stream para processamento de alertas em tempo real
+                stringRedisTemplate.opsForStream().add("telemetry:stream", Map.of("payload", payload));
+
+                // Acumula no buffer em memória para gravação em lote (Batch) no TimescaleDB
                 buffer.add(dto);
 
                 // Executa flush quando o buffer atinge o tamanho configurado
