@@ -1,14 +1,20 @@
-#
+# iot-simulator/main.py
 
+import paho.mqtt.client as mqtt
+import os
 import json
 import random
 import time
 from datetime import datetime, timezone
-import paho.mqtt.client as mqtt
+
+
+MQTT_HOST = os.getenv("MQTT_BROKER_HOST", "mosquitto")
+MQTT_PORT = int(os.getenv("MQTT_BROKER_PORT", 1883))
+
 
 # Configurações de Conexão com o Broker MQTT
-BROKER_HOST = "localhost"
-BROKER_PORT = 1883
+# BROKER_HOST = "localhost"
+# BROKER_PORT = 1883
 TOPIC = "telemetry/v1/data"
 
 # Identificadores de Contexto Multi-tenant e Máquina
@@ -20,8 +26,8 @@ def create_mqtt_client():
     """Cria e conecta o cliente MQTT ao broker Mosquitto."""
     client = mqtt.Client(client_id=f"sim_{MACHINE_ID}")
     try:
-        client.connect(BROKER_HOST, BROKER_PORT, keepalive=60)
-        print(f"[MQTT] Conectado ao Broker {BROKER_HOST}:{BROKER_PORT}")
+        client.connect(MQTT_HOST, MQTT_PORT, keepalive=60)
+        print(f"[MQTT] Conectado ao Broker {MQTT_HOST}:{MQTT_PORT}")
         return client
     except Exception as e:
         print(f"[ERRO] Falha ao conectar no Broker MQTT: {e}")
